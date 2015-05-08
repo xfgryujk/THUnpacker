@@ -3,6 +3,8 @@
 #include <direct.h>
 
 
+// common function /////////////////////////////////////////////////////////////////
+
 DWORD getFileSize(FILE* f)
 {
 	long offset = ftell(f);
@@ -13,6 +15,8 @@ DWORD getFileSize(FILE* f)
 }
 
 
+#pragma warning(push)
+#pragma warning(disable:4018)
 BYTE* decrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4, int a5, int a6)
 {
 	int v7; // [sp+8h] [bp-28h]@2
@@ -216,35 +220,31 @@ BYTE* uncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultBuffer, DWORD origi
 	}
 	return resultBuffer;
 }
+#pragma warning(pop)
 
-
-vector<Index>* formatIndex(const BYTE* indexBuffer, DWORD fileCount, DWORD indexAddress)
+void formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
 {
-	vector<Index>* index = new vector<Index>(fileCount);
-	DWORD i;
-
+	index.resize(fileCount);
+	int i;
 	for (i = 0; i < fileCount; i++)
 	{
-		(*index)[i].name = (char*)indexBuffer;
+		index[i].name = (char*)indexBuffer;
 		indexBuffer += strlen((char*)indexBuffer) + 1;
-		(*index)[i].address = ((DWORD*)indexBuffer)[0];
-		(*index)[i].originalLength = ((DWORD*)indexBuffer)[1];
+		index[i].address = ((DWORD*)indexBuffer)[0];
+		index[i].originalLength = ((DWORD*)indexBuffer)[1];
 		indexBuffer += 12;
 
-		printf("%30s  %10d  %10d\n", (*index)[i].name.c_str(), (*index)[i].address, (*index)[i].originalLength);
+		printf("%30s  %10d  %10d\n", index[i].name.c_str(), index[i].address, index[i].originalLength);
 	}
-
 	for (i = 0; i < fileCount - 1; i++)
-		(*index)[i].length = (*index)[i + 1].address - (*index)[i].address;
-	(*index)[i].length = indexAddress - (*index)[i].address;
-
-	return index;
+		index[i].length = index[i + 1].address - index[i].address;
+	index[i].length = indexAddress - index[i].address;
 }
 
-BOOL exportFiles(FILE* f, const vector<Index>* index, string dirName)
+BOOL exportFiles(FILE* f, const vector<Index>& index, string dirName)
 {
 	_mkdir(dirName.c_str());
-	for (const Index& i : (*index))
+	for (const Index& i : index)
 	{
 		// read file
 		BYTE* fileBuffer = new BYTE[i.length];
@@ -269,4 +269,35 @@ BOOL exportFiles(FILE* f, const vector<Index>* index, string dirName)
 		delete fileBuffer;
 	}
 	return TRUE;
+}
+
+// unpack //////////////////////////////////////////////////////////////////////////
+
+int THUnpacker::unpack()
+{
+	int result;
+	readHeader();
+	if ((result = checkCountAndSize()) != 0)
+		return result;
+	readIndex();
+	if ((result = exportFiles()) != 0)
+		return result;
+
+	puts("done.");
+	return 0;
+}
+
+int THUnpacker::checkCountAndSize()
+{
+	if (count <= 0)
+	{
+		puts(E_FILE_COUNT);
+		return EN_FILE_COUNT;
+	}
+	if (fileSize <= indexAddress)
+	{
+		puts(E_FILE_SIZE);
+		return EN_FILE_SIZE;
+	}
+	return 0;
 }
