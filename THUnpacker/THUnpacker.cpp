@@ -5,7 +5,10 @@
 class TH06Unpacker : public THUnpacker
 {
 public:
-	TH06Unpacker(FILE* _f) : THUnpacker(_f), f(_f) {}
+	TH06Unpacker(FILE* _f) : THUnpacker(_f), f(_f)
+	{
+		dirName = "th06";
+	}
 
 protected:
 	class PBG3File
@@ -99,22 +102,15 @@ protected:
 			index[i].length = index[i + 1].address - index[i].address;
 		index[i].length = indexAddress - index[i].address;
 	}
-
-	int exportFiles()
-	{
-		if (!::exportFiles(THUnpacker::f, index, "th06"))
-		{
-			puts(E_EXPORT);
-			return EN_EXPORT;
-		}
-		return 0;
-	}
 };
 
 class TH07Unpacker : public THUnpacker
 {
 public:
-	TH07Unpacker(FILE* _f) : THUnpacker(_f) {}
+	TH07Unpacker(FILE* _f) : THUnpacker(_f)
+	{
+		dirName = "th07";
+	}
 
 protected:
 	void readHeader()
@@ -142,22 +138,15 @@ protected:
 		formatIndex(index, indexBuffer, count, indexAddress);
 		delete indexBuffer;
 	}
-
-	int exportFiles()
-	{
-		if (!::exportFiles(f, index, "th07"))
-		{
-			puts(E_EXPORT);
-			return EN_EXPORT;
-		}
-		return 0;
-	}
 };
 
-class TH08Unpacker : public THUnpacker
+class TH0809Unpacker : public THUnpacker
 {
 public:
-	TH08Unpacker(FILE* _f) : THUnpacker(_f) {}
+	TH0809Unpacker(FILE* _f) : THUnpacker(_f)
+	{
+		dirName = "th0809";
+	}
 
 protected:
 	void readHeader()
@@ -193,14 +182,49 @@ protected:
 		delete indexBuffer;
 	}
 
-	int exportFiles()
+	// see th09.exe.0042BAF0, not used in th08
+	void onExport(BYTE*& buffer, DWORD& size)
 	{
-		if (!::exportFiles(f, index, "th08"))
+		// see th09.exe.00498E60
+		static BYTE decParam[] = {
+			0x5D, 0x1B, 0x37, 0xAA, 0x40, 0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x74, 0x51, 0xE9, 0xBB,
+			0x40, 0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x71, 0xC1, 0x51, 0xCC, 0x00, 0x04, 0x00, 0x00,
+			0x00, 0x04, 0x00, 0x00, 0x8A, 0x03, 0x19, 0xDD, 0x00, 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00,
+			0x95, 0xAB, 0xCD, 0xEE, 0x00, 0x02, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0xB7, 0x12, 0x34, 0xFF,
+			0x00, 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x9D, 0x35, 0x97, 0x11, 0x80, 0x00, 0x00, 0x00,
+			0x00, 0x28, 0x00, 0x00, 0xAA, 0x99, 0x37, 0x77, 0x00, 0x04, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00
+		};
+
+		if (buffer[0] != 'e' || buffer[1] != 'd' || buffer[2] != 'z')
+			return;
+		
+		int magicNumber = buffer[3];
+		int i = 0;
+		if (magicNumber != 'M')
 		{
-			puts(E_EXPORT);
-			return EN_EXPORT;
+			DWORD offset = 0;
+			while (offset < 0x60)
+			{
+				i++;
+				if (magicNumber == (decParam + 0xC)[offset] - 16 * (i + 1))
+				{
+					if (i >= 8)
+						return;
+					break;
+				}
+				offset += 0xC;
+			}
 		}
-		return 0;
+
+		BYTE* result = decrypt(
+			&buffer[4],
+			size - 4,
+			(decParam + 0x1)[12 * i],
+			(decParam + 0x2)[12 * i],
+			((int*)(decParam + 0x4))[3 * i],
+			((int*)(decParam + 0x8))[3 * i]);
+		delete buffer;
+		buffer = result;
 	}
 };
 
@@ -233,8 +257,8 @@ int main(int argc, char* argv[])
 	case 0x34474250: // "PBG4" for TH07
 		unpacker = new TH07Unpacker(f);
 		break;
-	case 0x5A474250: // "PBGZ" for TH08
-		unpacker = new TH08Unpacker(f);
+	case 0x5A474250: // "PBGZ" for TH08/09
+		unpacker = new TH0809Unpacker(f);
 		break;
 	}
 

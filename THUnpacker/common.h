@@ -40,9 +40,6 @@ DWORD getFileSize(FILE* f);
 BYTE* decrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4, int a5, int a6);
 BYTE* uncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultBuffer, DWORD originalSize);
 
-void formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress);
-BOOL exportFiles(FILE* f, const vector<Index>& index, string dirName);
-
 // unpack //////////////////////////////////////////////////////////////////////////
 
 class THUnpacker
@@ -54,6 +51,7 @@ protected:
 	DWORD originalIndexSize;
 	DWORD fileSize;
 	vector<Index> index;
+	char* dirName;
 
 public:
 	THUnpacker(FILE* _f)
@@ -61,11 +59,16 @@ public:
 		f = _f;
 		fileSize = getFileSize(_f);
 		count = indexAddress = originalIndexSize = 0;
+		dirName = "th";
 	}
 	int unpack();
 protected:
 	virtual void readHeader() = 0;
 	int checkCountAndSize();
 	virtual void readIndex() = 0;
-	virtual int exportFiles() = 0;
+
+	static void formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress);
+	int exportFiles(FILE* f, const vector<Index>& index, string dirName);
+	// called by exportFiles
+	virtual void onExport(BYTE*& buffer, DWORD& size) {}
 };

@@ -222,55 +222,6 @@ BYTE* uncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultBuffer, DWORD origi
 }
 #pragma warning(pop)
 
-void formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
-{
-	index.resize(fileCount);
-	int i;
-	for (i = 0; i < fileCount; i++)
-	{
-		index[i].name = (char*)indexBuffer;
-		indexBuffer += strlen((char*)indexBuffer) + 1;
-		index[i].address = ((DWORD*)indexBuffer)[0];
-		index[i].originalLength = ((DWORD*)indexBuffer)[1];
-		indexBuffer += 12;
-
-		printf("%30s  %10d  %10d\n", index[i].name.c_str(), index[i].address, index[i].originalLength);
-	}
-	for (i = 0; i < fileCount - 1; i++)
-		index[i].length = index[i + 1].address - index[i].address;
-	index[i].length = indexAddress - index[i].address;
-}
-
-BOOL exportFiles(FILE* f, const vector<Index>& index, string dirName)
-{
-	_mkdir(dirName.c_str());
-	for (const Index& i : index)
-	{
-		// read file
-		BYTE* fileBuffer = new BYTE[i.length];
-		fseek(f, i.address, SEEK_SET);
-		fread(fileBuffer, 1, i.length, f);
-		// uncompress
-		BYTE* result = uncompress(fileBuffer, i.length, NULL, i.originalLength);
-		delete fileBuffer;
-		fileBuffer = result;
-
-		// write file
-		FILE* f2;
-		fopen_s(&f2, (dirName + "\\" + i.name).c_str(), "wb");
-		if (f2 == NULL)
-		{
-			delete fileBuffer;
-			printf("Failed to open file: %s\n", (dirName + "\\" + i.name).c_str());
-			return FALSE;
-		}
-		fwrite(fileBuffer, 1, i.originalLength, f2);
-		fclose(f2);
-		delete fileBuffer;
-	}
-	return TRUE;
-}
-
 // unpack //////////////////////////////////////////////////////////////////////////
 
 int THUnpacker::unpack()
@@ -280,8 +231,11 @@ int THUnpacker::unpack()
 	if ((result = checkCountAndSize()) != 0)
 		return result;
 	readIndex();
-	if ((result = exportFiles()) != 0)
-		return result;
+	if (!exportFiles(f, index, dirName))
+	{
+		puts(E_EXPORT);
+		return EN_EXPORT;
+	}
 
 	puts("done.");
 	return 0;
@@ -300,4 +254,56 @@ int THUnpacker::checkCountAndSize()
 		return EN_FILE_SIZE;
 	}
 	return 0;
+}
+
+
+void THUnpacker::formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
+{
+	index.resize(fileCount);
+	int i;
+	for (i = 0; i < fileCount; i++)
+	{
+		index[i].name = (char*)indexBuffer;
+		indexBuffer += strlen((char*)indexBuffer) + 1;
+		index[i].address = ((DWORD*)indexBuffer)[0];
+		index[i].originalLength = ((DWORD*)indexBuffer)[1];
+		indexBuffer += 12;
+
+		printf("%30s  %10d  %10d\n", index[i].name.c_str(), index[i].address, index[i].originalLength);
+	}
+	for (i = 0; i < fileCount - 1; i++)
+		index[i].length = index[i + 1].address - index[i].address;
+	index[i].length = indexAddress - index[i].address;
+}
+
+BOOL THUnpacker::exportFiles(FILE* f, const vector<Index>& index, string dirName)
+{
+	_mkdir(dirName.c_str());
+	for (const Index& i : index)
+	{
+		// read file
+		BYTE* fileBuffer = new BYTE[i.length];
+		fseek(f, i.address, SEEK_SET);
+		fread(fileBuffer, 1, i.length, f);
+		// uncompress
+		BYTE* result = uncompress(fileBuffer, i.length, NULL, i.originalLength);
+		delete fileBuffer;
+		fileBuffer = result;
+		DWORD size = i.originalLength;
+		onExport(fileBuffer, size);
+
+		// write file
+		FILE* f2;
+		fopen_s(&f2, (dirName + "\\" + i.name).c_str(), "wb");
+		if (f2 == NULL)
+		{
+			delete fileBuffer;
+			printf("Failed to open file: %s\n", (dirName + "\\" + i.name).c_str());
+			return FALSE;
+		}
+		fwrite(fileBuffer, 1, size, f2);
+		fclose(f2);
+		delete fileBuffer;
+	}
+	return TRUE;
 }
