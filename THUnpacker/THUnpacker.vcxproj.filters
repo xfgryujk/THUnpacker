@@ -24,7 +24,16 @@
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="common.h">
+    <ClInclude Include="THUnpackerBase.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TH06Unpacker.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TH07Unpacker.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TH0809Unpacker.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,7 +44,16 @@
     <ClCompile Include="THUnpacker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="common.cpp">
+    <ClCompile Include="THUnpackerBase.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="TH06Unpacker.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="TH07Unpacker.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="TH0809Unpacker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

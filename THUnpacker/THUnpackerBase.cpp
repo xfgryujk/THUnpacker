@@ -1,11 +1,38 @@
 #include "stdafx.h"
-#include "common.h"
-#include <direct.h>
+#include "THUnpackerBase.h"
+#include <direct.h> // for _mkdir()
+
+#include "TH06Unpacker.h"
+#include "TH07Unpacker.h"
+#include "TH0809Unpacker.h"
 
 
-// common function /////////////////////////////////////////////////////////////////
+// create instance base on magic number
+THUnpackerBase* THUnpackerBase::create(FILE* _f)
+{
+	DWORD magicNumber = 0;
+	fread(&magicNumber, 4, 1, _f);
 
-DWORD getFileSize(FILE* f)
+	THUnpackerBase* instance = NULL;
+	switch (magicNumber)
+	{
+	case 0x33474250: // "PBG3" for TH06
+		instance = new TH06Unpacker(_f);
+		break;
+	case 0x34474250: // "PBG4" for TH07
+		instance = new TH07Unpacker(_f);
+		break;
+	case 0x5A474250: // "PBGZ" for TH08/09
+		instance = new TH0809Unpacker(_f);
+		break;
+	}
+
+	return instance;
+}
+
+// common static functions //////////////////////////////////////////////////////////
+
+DWORD THUnpackerBase::getFileSize(FILE* f)
 {
 	long offset = ftell(f);
 	fseek(f, 0, SEEK_END);
@@ -14,10 +41,9 @@ DWORD getFileSize(FILE* f)
 	return size;
 }
 
-
 #pragma warning(push)
 #pragma warning(disable:4018)
-BYTE* decrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4, int a5, int a6)
+BYTE* THUnpackerBase::thDecrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4, int a5, int a6)
 {
 	int v7; // [sp+8h] [bp-28h]@2
 	int lengtha; // [sp+Ch] [bp-24h]@6
@@ -79,7 +105,7 @@ BYTE* decrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4, int a5, int a6)
 	return resultBuffer;
 }
 
-BYTE* uncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultBuffer, DWORD originalSize)
+BYTE* THUnpackerBase::thUncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultBuffer, DWORD originalSize)
 {
 	static BYTE tmp[8500];
 	char v5; // ST18_1@53
@@ -224,7 +250,16 @@ BYTE* uncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultBuffer, DWORD origi
 
 // unpack //////////////////////////////////////////////////////////////////////////
 
-int THUnpacker::unpack()
+THUnpackerBase::THUnpackerBase(FILE* _f)
+{
+	f = _f;
+	fileSize = getFileSize(_f);
+	count = indexAddress = originalIndexSize = 0;
+	dirName = "th";
+}
+
+
+int THUnpackerBase::unpack()
 {
 	int result;
 	readHeader();
@@ -241,7 +276,7 @@ int THUnpacker::unpack()
 	return 0;
 }
 
-int THUnpacker::checkCountAndSize()
+int THUnpackerBase::checkCountAndSize()
 {
 	if (count <= 0)
 	{
@@ -257,7 +292,7 @@ int THUnpacker::checkCountAndSize()
 }
 
 
-void THUnpacker::formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
+void THUnpackerBase::formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
 {
 	index.resize(fileCount);
 	int i;
@@ -276,7 +311,7 @@ void THUnpacker::formatIndex(vector<Index>& index, const BYTE* indexBuffer, int 
 	index[i].length = indexAddress - index[i].address;
 }
 
-BOOL THUnpacker::exportFiles(FILE* f, const vector<Index>& index, string dirName)
+BOOL THUnpackerBase::exportFiles(FILE* f, const vector<Index>& index, string dirName)
 {
 	_mkdir(dirName.c_str());
 	for (const Index& i : index)
@@ -286,7 +321,7 @@ BOOL THUnpacker::exportFiles(FILE* f, const vector<Index>& index, string dirName
 		fseek(f, i.address, SEEK_SET);
 		fread(fileBuffer, 1, i.length, f);
 		// uncompress
-		BYTE* result = uncompress(fileBuffer, i.length, NULL, i.originalLength);
+		BYTE* result = thUncompress(fileBuffer, i.length, NULL, i.originalLength);
 		delete fileBuffer;
 		fileBuffer = result;
 		DWORD size = i.originalLength;
