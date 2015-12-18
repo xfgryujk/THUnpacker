@@ -44,7 +44,8 @@ protected:
 
 public:
 	THUnpackerBase(FILE* _f);
-	int unpack();
+	virtual ~THUnpackerBase() {}
+	virtual int unpack();
 
 	static THUnpackerBase* create(FILE* _f);
 
@@ -53,8 +54,10 @@ protected:
 	virtual int checkCountAndSize();
 	virtual void readIndex() = 0;
 	virtual int exportFiles(FILE* f, const vector<Index>& index, string dirName);
+	// called by exportFiles, return true if need to uncompress
+	virtual bool onUncompress(const Index& index, BYTE*& buffer, DWORD& size) { return true; }
 	// called by exportFiles
-	virtual void onExport(BYTE*& buffer, DWORD& size) {}
+	virtual void onExport(const Index& index, BYTE*& buffer, DWORD& size) {}
 
 
 	static DWORD getFileSize(FILE* f);
@@ -62,5 +65,5 @@ protected:
 	static BYTE* thDecrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4, int a5, int a6);
 	static BYTE* thUncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultBuffer, DWORD originalSize);
 
-	static void formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress);
+	virtual void formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress);
 };

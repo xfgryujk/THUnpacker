@@ -5,6 +5,7 @@
 #include "TH06Unpacker.h"
 #include "TH07Unpacker.h"
 #include "TH0809Unpacker.h"
+#include "TH14Unpacker.h"
 
 
 // create instance base on magic number
@@ -24,6 +25,9 @@ THUnpackerBase* THUnpackerBase::create(FILE* _f)
 		break;
 	case 0x5A474250: // "PBGZ" for TH08/09
 		instance = new TH0809Unpacker(_f);
+		break;
+	case 0xB4B35A13: // encrypted "THA1" for TH14
+		instance = new TH14Unpacker(_f);
 		break;
 	}
 
@@ -45,64 +49,83 @@ DWORD THUnpackerBase::getFileSize(FILE* f)
 #pragma warning(disable:4018)
 BYTE* THUnpackerBase::thDecrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4, int a5, int a6)
 {
-	int v7; // [sp+8h] [bp-28h]@2
-	int lengtha; // [sp+Ch] [bp-24h]@6
-	int lengthb; // [sp+Ch] [bp-24h]@18
-	int v12; // [sp+18h] [bp-18h]@6
-	BYTE* v13; // [sp+1Ch] [bp-14h]@4
-	int v14; // [sp+1Ch] [bp-14h]@11
-	int v15; // [sp+1Ch] [bp-14h]@14
-	BYTE* resultBuffer; // [sp+20h] [bp-10h]@4
-	int v17; // [sp+24h] [bp-Ch]@11
-	int v18; // [sp+24h] [bp-Ch]@14
-	BYTE* v19; // [sp+28h] [bp-8h]@11
-	BYTE* v20; // [sp+2Ch] [bp-4h]@4
+	int v7; // edi@1
+	int v8; // ecx@1
+	size_t v9; // ecx@3
+	void *v10; // ecx@5
+	void *v11; // esi@5
+	int v12; // eax@6
+	char v13; // cl@7
+	int v14; // edx@7
+	int v15; // eax@11
+	int v16; // edi@11
+	int i; // eax@11
+	char v18; // dl@12
+	int v19; // eax@13
+	int j; // edi@13
+	char v21; // dl@14
+	int v25; // [sp+14h] [bp-Ch]@6
+	BYTE *v26; // [sp+18h] [bp-8h]@5
+	int a5a; // [sp+30h] [bp+10h]@3
+	int a5b; // [sp+30h] [bp+10h]@11
 
-	if (bufferSize % a5 >= a5 / 4)
-		v7 = 0;
-	else
-		v7 = bufferSize % a5;
-	v20 = buffer;
-	resultBuffer = new BYTE[bufferSize];
-	v13 = resultBuffer;
-	if (resultBuffer == NULL)
-		return buffer;
-
-	v12 = (bufferSize & 1) + v7;
-	lengtha = bufferSize - v12;
-	while (lengtha > 0 && a6 > 0)
+	v7 = a5;
+	v8 = 0;
+	if ((signed int)bufferSize % a5 < a5 / 4)
+		v8 = (signed int)bufferSize % a5;
+	a5a = v8;
+	v9 = a6;
+	if (a6 >(signed int)bufferSize)
+		v9 = bufferSize;
+	v26 = buffer;
+	v10 = malloc(v9);
+	v11 = v10;
+	if (v10)
 	{
-		if (lengtha < a5)
-			a5 = lengtha;
-		v19 = v13;
-		v14 = (int)((BYTE *)v13 + a5 - 1);
-		v17 = (a5 + 1) / 2;
-		while (v17 > 0)
+		v25 = bufferSize - (a5a + (bufferSize & 1));
+		memcpy(v10, buffer, v9);
+		v12 = v25;
+		if (v25 > 0)
 		{
-			*(BYTE *)v14 = a3 ^ *(BYTE *)v20;
-			v14 -= 2;
-			a3 += a4;
-			--v17;
-			v20++;
+			v13 = a3;
+			v14 = a6;
+			do
+			{
+				if (v14 <= 0)
+					break;
+				if (v12 < v7)
+					v7 = v12;
+				v15 = (int)&v26[v7];
+				v26 = (BYTE *)v15;
+				a5b = v7;
+				v16 = v15 - 1;
+				for (i = (a5b + 1) / 2; i > 0; v16 -= 2)
+				{
+					v18 = v13 ^ *(BYTE *)v11;
+					--i;
+					v13 += a4;
+					v11 = (char *)v11 + 1;
+					*(BYTE *)v16 = v18;
+				}
+				v19 = a5b / 2;
+				for (j = (int)(v26 - 2); v19 > 0; j -= 2)
+				{
+					v21 = v13 ^ *(BYTE *)v11;
+					--v19;
+					v13 += a4;
+					v11 = (char *)v11 + 1;
+					*(BYTE *)j = v21;
+				}
+				v7 = a5b;
+				v12 = v25 - a5b;
+				v14 = a6 - a5b;
+				v25 = v12;
+				a6 -= a5b;
+			} while (v12 > 0);
 		}
-		v15 = (int)((BYTE *)v19 + a5 - 2);
-		v18 = a5 / 2;
-		while (v18 > 0)
-		{
-			*(BYTE *)v15 = a3 ^ *(BYTE *)v20;
-			v15 -= 2;
-			a3 += a4;
-			--v18;
-			v20++;
-		}
-		lengtha -= a5;
-		v13 = v19 + a5;
-		a6 -= a5;
+		free(v10);
 	}
-	lengthb = v12 + lengtha;
-	if (lengthb > 0)
-		memcpy(v13, v20, lengthb);
-	return resultBuffer;
+	return buffer;
 }
 
 BYTE* THUnpackerBase::thUncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultBuffer, DWORD originalSize)
@@ -266,13 +289,14 @@ int THUnpackerBase::unpack()
 	if ((result = checkCountAndSize()) != 0)
 		return result;
 	readIndex();
+	puts("Exporting...");
 	if (!exportFiles(f, index, dirName))
 	{
 		puts(E_EXPORT);
 		return EN_EXPORT;
 	}
 
-	puts("done.");
+	puts("Done.");
 	return 0;
 }
 
@@ -317,15 +341,25 @@ BOOL THUnpackerBase::exportFiles(FILE* f, const vector<Index>& index, string dir
 	for (const Index& i : index)
 	{
 		// read file
-		BYTE* fileBuffer = new BYTE[i.length];
+		DWORD size = i.length;
+		BYTE* fileBuffer = new BYTE[size];
 		fseek(f, i.address, SEEK_SET);
-		fread(fileBuffer, 1, i.length, f);
+		fread(fileBuffer, 1, size, f);
+
+		// decrypt 1
+		bool uncomp = onUncompress(i, fileBuffer, size);
+
 		// uncompress
-		BYTE* result = thUncompress(fileBuffer, i.length, NULL, i.originalLength);
-		delete fileBuffer;
-		fileBuffer = result;
-		DWORD size = i.originalLength;
-		onExport(fileBuffer, size);
+		if (uncomp)
+		{
+			BYTE* result = thUncompress(fileBuffer, size, NULL, i.originalLength);
+			delete fileBuffer;
+			fileBuffer = result;
+			size = i.originalLength;
+		}
+
+		// decrypt 2
+		onExport(i, fileBuffer, size);
 
 		// write file
 		FILE* f2;

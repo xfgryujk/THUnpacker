@@ -13,11 +13,10 @@ void TH0809Unpacker::readHeader()
 	DWORD header[3];
 	fread(header, 1, 12, f);
 	// decrypt
-	DWORD* result = (DWORD*)thDecrypt((BYTE*)header, 12, 27, 55, 12, 1024);
-	count = result[0] - 123456;
-	indexAddress = result[1] - 345678;
-	originalIndexSize = result[2] - 567891;
-	delete result;
+	thDecrypt((BYTE*)header, 12, 27, 55, 12, 1024);
+	count = header[0] - 123456;
+	indexAddress = header[1] - 345678;
+	originalIndexSize = header[2] - 567891;
 }
 
 void TH0809Unpacker::readIndex()
@@ -42,7 +41,7 @@ void TH0809Unpacker::readIndex()
 }
 
 // see th09.exe.0042BAF0, not used in th08
-void TH0809Unpacker::onExport(BYTE*& buffer, DWORD& size)
+void TH0809Unpacker::onExport(const Index& index, BYTE*& buffer, DWORD& size)
 {
 	// see th09.exe.00498E60
 	static const BYTE decParam[] = {
@@ -75,13 +74,16 @@ void TH0809Unpacker::onExport(BYTE*& buffer, DWORD& size)
 		}
 	}
 
-	BYTE* result = thDecrypt(
-		&buffer[4],
-		size - 4,
+	DWORD newSize = size - 4;
+	BYTE* result = new BYTE[newSize];
+	memcpy(result, &buffer[4], newSize);
+	delete buffer;
+	buffer = result;
+	thDecrypt(
+		result,
+		newSize,
 		(decParam + 0x1)[12 * i],
 		(decParam + 0x2)[12 * i],
 		((int*)(decParam + 0x4))[3 * i],
 		((int*)(decParam + 0x8))[3 * i]);
-	delete buffer;
-	buffer = result;
 }

@@ -10,5 +10,5 @@ public:
 protected:
 	void readHeader();
 	void readIndex();
-	void onExport(BYTE*& buffer, DWORD& size);
+	void onExport(const Index& index, BYTE*& buffer, DWORD& size);
 };

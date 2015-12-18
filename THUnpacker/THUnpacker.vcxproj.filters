@@ -36,6 +36,9 @@
     <ClInclude Include="TH0809Unpacker.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="TH14Unpacker.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -54,6 +57,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="TH0809Unpacker.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="TH14Unpacker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
