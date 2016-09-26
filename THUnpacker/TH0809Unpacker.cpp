@@ -26,11 +26,9 @@ void TH0809Unpacker::readIndex()
 	BYTE* indexBuffer = new BYTE[indexSize];
 	fread(indexBuffer, 1, indexSize, f);
 	// decrypt
-	BYTE* result = thDecrypt(indexBuffer, indexSize, 62, -101, 128, 1024);
-	delete indexBuffer;
-	indexBuffer = result;
+	thDecrypt(indexBuffer, indexSize, 62, -101, 128, 1024);
 	// uncompress
-	result = thUncompress(indexBuffer, indexSize, NULL, originalIndexSize);
+	BYTE* result = thUncompress(indexBuffer, indexSize, NULL, originalIndexSize);
 	delete indexBuffer;
 	indexBuffer = result;
 	indexSize = originalIndexSize;
