@@ -5,6 +5,7 @@
 #include "TH06Unpacker.h"
 #include "TH07Unpacker.h"
 #include "TH0809Unpacker.h"
+#include "TH10Unpacker.h"
 #include "TH14Unpacker.h"
 
 
@@ -25,6 +26,9 @@ THUnpackerBase* THUnpackerBase::create(FILE* _f)
 		break;
 	case 0x5A474250: // "PBGZ" for TH08/09
 		instance = new TH0809Unpacker(_f);
+		break;
+	case 0xB0B35513: // encrypted "THA1" for TH10
+		instance = new TH10Unpacker(_f);
 		break;
 	case 0xB4B35A13: // encrypted "THA1" for TH14
 		instance = new TH14Unpacker(_f);

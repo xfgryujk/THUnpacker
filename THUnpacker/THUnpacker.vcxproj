@@ -76,12 +76,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="TH06Unpacker.h" />
     <ClInclude Include="TH07Unpacker.h" />
     <ClInclude Include="TH0809Unpacker.h" />
+    <ClInclude Include="TH10Unpacker.h" />
     <ClInclude Include="TH14Unpacker.h" />
     <ClInclude Include="THUnpackerBase.h" />
     <ClInclude Include="stdafx.h" />
@@ -91,6 +89,7 @@
     <ClCompile Include="TH06Unpacker.cpp" />
     <ClCompile Include="TH07Unpacker.cpp" />
     <ClCompile Include="TH0809Unpacker.cpp" />
+    <ClCompile Include="TH10Unpacker.cpp" />
     <ClCompile Include="TH14Unpacker.cpp" />
     <ClCompile Include="THUnpackerBase.cpp" />
     <ClCompile Include="stdafx.cpp">
