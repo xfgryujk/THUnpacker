@@ -48,6 +48,9 @@
     <ClInclude Include="TH13Unpacker.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="TH15Unpacker.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -81,6 +84,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="TH13Unpacker.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="TH15Unpacker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

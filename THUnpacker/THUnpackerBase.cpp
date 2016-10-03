@@ -10,6 +10,7 @@
 #include "TH12Unpacker.h"
 #include "TH13Unpacker.h"
 #include "TH14Unpacker.h"
+#include "TH15Unpacker.h"
 
 
 // create instance base on magic number
@@ -39,11 +40,14 @@ THUnpackerBase* THUnpackerBase::create(FILE* _f)
 	case 0xB1B35A13: // encrypted "THA1" for TH12
 		instance = new TH12Unpacker(_f);
 		break;
-	case 0xB3B35A13: // encrypted "THA1" for TH13
+	/*case 0xB3B35A13: // encrypted "THA1" for TH13
 		instance = new TH13Unpacker(_f);
-		break;
+		break;*/
 	case 0xB4B35A13: // encrypted "THA1" for TH14
 		instance = new TH14Unpacker(_f);
+		break;
+	case 0xB3B35A13: // encrypted "THA1" for TH15
+		instance = new TH15Unpacker(_f);
 		break;
 	}
 

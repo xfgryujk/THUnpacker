@@ -84,6 +84,7 @@
     <ClInclude Include="TH12Unpacker.h" />
     <ClInclude Include="TH13Unpacker.h" />
     <ClInclude Include="TH14Unpacker.h" />
+    <ClInclude Include="TH15Unpacker.h" />
     <ClInclude Include="THUnpackerBase.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -97,6 +98,7 @@
     <ClCompile Include="TH12Unpacker.cpp" />
     <ClCompile Include="TH13Unpacker.cpp" />
     <ClCompile Include="TH14Unpacker.cpp" />
+    <ClCompile Include="TH15Unpacker.cpp" />
     <ClCompile Include="THUnpackerBase.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
