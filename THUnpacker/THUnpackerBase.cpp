@@ -7,6 +7,8 @@
 #include "TH0809Unpacker.h"
 #include "TH10Unpacker.h"
 #include "TH11Unpacker.h"
+#include "TH12Unpacker.h"
+#include "TH13Unpacker.h"
 #include "TH14Unpacker.h"
 
 
@@ -33,6 +35,12 @@ THUnpackerBase* THUnpackerBase::create(FILE* _f)
 		break;
 	case 0xB2B35A13: // encrypted "THA1" for TH11
 		instance = new TH11Unpacker(_f);
+		break;
+	case 0xB1B35A13: // encrypted "THA1" for TH12
+		instance = new TH12Unpacker(_f);
+		break;
+	case 0xB3B35A13: // encrypted "THA1" for TH13
+		instance = new TH13Unpacker(_f);
 		break;
 	case 0xB4B35A13: // encrypted "THA1" for TH14
 		instance = new TH14Unpacker(_f);
