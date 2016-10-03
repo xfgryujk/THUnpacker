@@ -5,17 +5,14 @@
 #include "TH06Unpacker.h"
 #include "TH07Unpacker.h"
 #include "TH0809Unpacker.h"
-#include "TH10Unpacker.h"
-#include "TH11Unpacker.h"
-#include "TH12Unpacker.h"
-#include "TH13Unpacker.h"
-#include "TH14Unpacker.h"
-#include "TH15Unpacker.h"
+#include "TH10To15Unpacker.h"
 
 
 // create instance base on magic number
 THUnpackerBase* THUnpackerBase::create(FILE* _f)
 {
+	char c;
+
 	DWORD magicNumber = 0;
 	fread(&magicNumber, 4, 1, _f);
 
@@ -40,14 +37,16 @@ THUnpackerBase* THUnpackerBase::create(FILE* _f)
 	case 0xB1B35A13: // encrypted "THA1" for TH12
 		instance = new TH12Unpacker(_f);
 		break;
-	/*case 0xB3B35A13: // encrypted "THA1" for TH13
-		instance = new TH13Unpacker(_f);
-		break;*/
+	case 0xB3B35A13: // encrypted "THA1" for TH13/15
+		puts("Please input [3|5] if this file belongs to TH13/15");
+		while ((c = getchar()) != '3' && c != '5');
+		if (c == '3')
+			instance = new TH13Unpacker(_f);
+		else/* if (c == '5')*/
+			instance = new TH15Unpacker(_f);
+		break;
 	case 0xB4B35A13: // encrypted "THA1" for TH14
 		instance = new TH14Unpacker(_f);
-		break;
-	case 0xB3B35A13: // encrypted "THA1" for TH15
-		instance = new TH15Unpacker(_f);
 		break;
 	}
 

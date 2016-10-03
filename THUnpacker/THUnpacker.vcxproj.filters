@@ -33,22 +33,7 @@
     <ClInclude Include="TH0809Unpacker.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="TH14Unpacker.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="TH10Unpacker.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="TH11Unpacker.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="TH12Unpacker.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="TH13Unpacker.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="TH15Unpacker.h">
+    <ClInclude Include="TH10To15Unpacker.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,22 +56,7 @@
     <ClCompile Include="TH0809Unpacker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="TH14Unpacker.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="TH10Unpacker.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="TH11Unpacker.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="TH12Unpacker.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="TH13Unpacker.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="TH15Unpacker.cpp">
+    <ClCompile Include="TH10To15Unpacker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
