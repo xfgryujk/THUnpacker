@@ -1,41 +1,44 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
+#include <locale.h>
+#include <locale>
+using namespace std;
 #include "THUnpackerBase.h"
 
 
-int main(int argc, char* argv[])
+int wmain(int argc, WCHAR* argv[])
 {
+	setlocale(LC_ALL, "");
+	locale::global(locale(""));
+
 	if (argc != 2)
 	{
 		puts("Usage: THUnpacker filename");
 		return 1;
 	}
 
-	// open file
+	// Open file
 	FILE* f;
-	fopen_s(&f, argv[1], "rb");
+	_tfopen_s(&f, argv[1], _T("rb"));
 	if (f == NULL)
 	{
-		puts(E_OPEN_FILE);
-		return EN_OPEN_FILE;
+		puts("Failed to open the file!");
+		return 1;
 	}
 
-	// create unpacker
-	THUnpackerBase* unpacker = THUnpackerBase::create(f);
+	// Create unpacker
+	auto unpacker = THUnpackerBase::Create(f);
 
-	// unpack
+	// Unpack
 	int result;
-	if (unpacker == NULL)
+	if (unpacker == nullptr)
 	{
-		puts(E_UNKNOWN_TYPE);
-		result = EN_UNKNOWN_TYPE;
+		puts("Unknown file type!");
+		result = 1;
 	}
 	else
-	{
-		result = unpacker->unpack();
-		delete unpacker;
-	}
+		result = unpacker->Unpack();
 
-	// close file
+	// Close file
 	fclose(f);
 	return result;
 }

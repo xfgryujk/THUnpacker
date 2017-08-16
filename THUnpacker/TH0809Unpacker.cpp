@@ -1,47 +1,45 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "TH0809Unpacker.h"
+using namespace std;
 
 
-TH0809Unpacker::TH0809Unpacker(FILE* _f) 
-: THUnpackerBase(_f)
+TH0809Unpacker::TH0809Unpacker(FILE* _f) :
+	THUnpackerBase(_f)
 {
-	dirName = "th0809";
+	dirName = L"th0809";
 }
 
-void TH0809Unpacker::readHeader()
+void TH0809Unpacker::ReadHeader()
 {
 	DWORD header[3];
 	fread(header, 1, 12, f);
-	// decrypt
-	thDecrypt((BYTE*)header, 12, 27, 55, 12, 1024);
+	// Decrypt
+	THDecrypt((BYTE*)header, 12, 27, 55, 12, 1024);
 	count = header[0] - 123456;
 	indexAddress = header[1] - 345678;
 	originalIndexSize = header[2] - 567891;
 }
 
-void TH0809Unpacker::readIndex()
+void TH0809Unpacker::ReadIndex()
 {
 	fseek(f, indexAddress, SEEK_SET);
 	DWORD indexSize = fileSize - indexAddress;
-	BYTE* indexBuffer = new BYTE[indexSize];
-	fread(indexBuffer, 1, indexSize, f);
-	// decrypt
-	thDecrypt(indexBuffer, indexSize, 62, -101, 128, 1024);
-	// uncompress
-	BYTE* result = thUncompress(indexBuffer, indexSize, NULL, originalIndexSize);
-	delete indexBuffer;
-	indexBuffer = result;
+	auto indexBuffer = make_unique<BYTE[]>(indexSize);
+	fread(indexBuffer.get(), 1, indexSize, f);
+	// Decrypt
+	THDecrypt(indexBuffer.get(), indexSize, 62, -101, 128, 1024);
+	// Uncompress
+	indexBuffer = THUncompress(indexBuffer.get(), indexSize, originalIndexSize);
 	indexSize = originalIndexSize;
 
-	// format index
-	formatIndex(index, indexBuffer, count, indexAddress);
-	delete indexBuffer;
+	// Format index
+	FormatIndex(index, indexBuffer.get(), count, indexAddress);
 }
 
-// see th09.exe.0042BAF0, not used in th08
-void TH0809Unpacker::onExport(const Index& index, BYTE*& buffer, DWORD& size)
+// See th09.exe.0042BAF0. Not used in th08
+void TH0809Unpacker::OnExport(const Index& index, unique_ptr<BYTE[]>& buffer, DWORD& size)
 {
-	// see th09.exe.00498E60
+	// See th09.exe.00498E60
 	static const BYTE decParam[] = {
 		0x5D, 0x1B, 0x37, 0xAA, 0x40, 0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x74, 0x51, 0xE9, 0xBB,
 		0x40, 0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x71, 0xC1, 0x51, 0xCC, 0x00, 0x04, 0x00, 0x00,
@@ -73,15 +71,15 @@ void TH0809Unpacker::onExport(const Index& index, BYTE*& buffer, DWORD& size)
 	}
 
 	DWORD newSize = size - 4;
-	BYTE* result = new BYTE[newSize];
-	memcpy(result, &buffer[4], newSize);
-	delete buffer;
-	buffer = result;
-	thDecrypt(
-		result,
+	auto result = make_unique<BYTE[]>(newSize);
+	memcpy(result.get(), &buffer[4], newSize);
+	buffer = std::move(result);
+	THDecrypt(
+		buffer.get(),
 		newSize,
 		(decParam + 0x1)[12 * i],
 		(decParam + 0x2)[12 * i],
 		((int*)(decParam + 0x4))[3 * i],
-		((int*)(decParam + 0x8))[3 * i]);
+		((int*)(decParam + 0x8))[3 * i]
+	);
 }

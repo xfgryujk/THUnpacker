@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "THUnpackerBase.h"
 
 
@@ -8,7 +8,7 @@ public:
 	TH0809Unpacker(FILE* _f);
 
 protected:
-	void readHeader();
-	void readIndex();
-	void onExport(const Index& index, BYTE*& buffer, DWORD& size);
+	virtual void ReadHeader() override;
+	virtual void ReadIndex() override;
+	virtual void OnExport(const Index& index, std::unique_ptr<BYTE[]>& buffer, DWORD& size) override;
 };

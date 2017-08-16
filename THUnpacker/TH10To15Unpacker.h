@@ -9,17 +9,18 @@ protected:
 	const BYTE* decParam;
 
 public:
-	TH10To15Unpacker(FILE* _f, char* _dirName, DWORD _magicNumber, const BYTE* _decParam);
+	TH10To15Unpacker(FILE* _f, wchar_t* _dirName, DWORD _magicNumber, const BYTE* _decParam);
+	virtual ~TH10To15Unpacker() = default;
 
 protected:
-	void readHeader();
-	void readIndex();
-	void formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress);
-	bool onUncompress(const Index& index, BYTE*& buffer, DWORD& size);
+	virtual void ReadHeader() override;
+	virtual void ReadIndex() override;
+	virtual void FormatIndex(std::vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress) override;
+	virtual bool OnUncompress(const Index& index, std::unique_ptr<BYTE[]>& buffer, DWORD& size) override;
 };
 
 
-class TH10Unpacker : public TH10To15Unpacker
+class TH10Unpacker final : public TH10To15Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -27,7 +28,7 @@ public:
 	TH10Unpacker(FILE* _f);
 };
 
-class TH11Unpacker : public TH10To15Unpacker
+class TH11Unpacker final : public TH10To15Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -35,7 +36,7 @@ public:
 	TH11Unpacker(FILE* _f);
 };
 
-class TH12Unpacker : public TH10To15Unpacker
+class TH12Unpacker final : public TH10To15Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -43,7 +44,7 @@ public:
 	TH12Unpacker(FILE* _f);
 };
 
-class TH13Unpacker : public TH10To15Unpacker
+class TH13Unpacker final : public TH10To15Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -51,7 +52,7 @@ public:
 	TH13Unpacker(FILE* _f);
 };
 
-class TH14Unpacker : public TH10To15Unpacker
+class TH14Unpacker final : public TH10To15Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -59,7 +60,7 @@ public:
 	TH14Unpacker(FILE* _f);
 };
 
-class TH15Unpacker : public TH10To15Unpacker
+class TH15Unpacker final : public TH10To15Unpacker
 {
 private:
 	static const BYTE _decParam[];

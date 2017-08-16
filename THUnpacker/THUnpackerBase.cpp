@@ -1,5 +1,6 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "THUnpackerBase.h"
+using namespace std;
 #include <direct.h> // for _mkdir()
 
 #include "TH06Unpacker.h"
@@ -8,54 +9,45 @@
 #include "TH10To15Unpacker.h"
 
 
-// create instance base on magic number
-THUnpackerBase* THUnpackerBase::create(FILE* _f)
+// Create instance base on magic number
+std::shared_ptr<THUnpackerBase> THUnpackerBase::Create(FILE* _f)
 {
-	char c;
-
 	DWORD magicNumber = 0;
 	fread(&magicNumber, 4, 1, _f);
 
-	THUnpackerBase* instance = NULL;
 	switch (magicNumber)
 	{
 	case 0x33474250: // "PBG3" for TH06
-		instance = new TH06Unpacker(_f);
-		break;
+		return make_shared<TH06Unpacker>(_f);
 	case 0x34474250: // "PBG4" for TH07
-		instance = new TH07Unpacker(_f);
-		break;
+		return make_shared<TH07Unpacker>(_f);
 	case 0x5A474250: // "PBGZ" for TH08/09
-		instance = new TH0809Unpacker(_f);
-		break;
-	case 0xB0B35513: // encrypted "THA1" for TH10
-		instance = new TH10Unpacker(_f);
-		break;
-	case 0xB2B35A13: // encrypted "THA1" for TH11
-		instance = new TH11Unpacker(_f);
-		break;
-	case 0xB1B35A13: // encrypted "THA1" for TH12
-		instance = new TH12Unpacker(_f);
-		break;
-	case 0xB3B35A13: // encrypted "THA1" for TH13/15
+		return make_shared<TH0809Unpacker>(_f);
+	case 0xB0B35513: // Encrypted "THA1" for TH10
+		return make_shared<TH10Unpacker>(_f);
+	case 0xB2B35A13: // Encrypted "THA1" for TH11
+		return make_shared<TH11Unpacker>(_f);
+	case 0xB1B35A13: // Encrypted "THA1" for TH12
+		return make_shared<TH12Unpacker>(_f);
+	case 0xB3B35A13: // Encrypted "THA1" for TH13/15
+	{
 		puts("Please input [3|5] if this file belongs to TH13/15");
+		char c;
 		while ((c = getchar()) != '3' && c != '5');
 		if (c == '3')
-			instance = new TH13Unpacker(_f);
-		else/* if (c == '5')*/
-			instance = new TH15Unpacker(_f);
-		break;
-	case 0xB4B35A13: // encrypted "THA1" for TH14
-		instance = new TH14Unpacker(_f);
-		break;
+			return make_shared<TH13Unpacker>(_f);
+		return make_shared<TH15Unpacker>(_f);
 	}
-
-	return instance;
+	case 0xB4B35A13: // Encrypted "THA1" for TH14
+		return make_shared<TH14Unpacker>(_f);
+	}
+	return nullptr;
 }
 
-// common static functions //////////////////////////////////////////////////////////
 
-DWORD THUnpackerBase::getFileSize(FILE* f)
+// Common static functions //////////////////////////////////////////////////////////
+
+DWORD THUnpackerBase::GetFileSize(FILE* f)
 {
 	long offset = ftell(f);
 	fseek(f, 0, SEEK_END);
@@ -64,9 +56,19 @@ DWORD THUnpackerBase::getFileSize(FILE* f)
 	return size;
 }
 
+wstring THUnpackerBase::StringToWstring(const string& src)
+{
+	size_t size;
+	mbstowcs_s(&size, NULL, 0, src.c_str(), 0);
+	wstring dst(size, L'\0');
+	mbstowcs_s(&size, &dst.front(), size, src.c_str(), size);
+	return std::move(dst);
+}
+
+
 #pragma warning(push)
 #pragma warning(disable:4018)
-BYTE* THUnpackerBase::thDecrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4, int a5, int a6)
+void THUnpackerBase::THDecrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4, int a5, int a6)
 {
 	int v7; // edi@1
 	int v8; // ecx@1
@@ -144,10 +146,9 @@ BYTE* THUnpackerBase::thDecrypt(BYTE* buffer, DWORD bufferSize, char a3, char a4
 		}
 		free(v10);
 	}
-	return buffer;
 }
 
-BYTE* THUnpackerBase::thUncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultBuffer, DWORD originalSize)
+unique_ptr<BYTE[]> THUnpackerBase::THUncompress(const BYTE* buffer, DWORD bufferSize, DWORD originalSize)
 {
 	static BYTE tmp[8500];
 	char v5; // ST18_1@53
@@ -160,7 +161,7 @@ BYTE* THUnpackerBase::thUncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultB
 	int v14; // [sp+20h] [bp-1Ch]@13
 	int v15; // [sp+20h] [bp-1Ch]@26
 	int v16; // [sp+20h] [bp-1Ch]@39
-	BYTE* pBuffer; // [sp+24h] [bp-18h]@4
+	const BYTE* pBuffer; // [sp+24h] [bp-18h]@4
 	BYTE v18; // [sp+2Bh] [bp-11h]@1
 	int i; // [sp+2Ch] [bp-10h]@51
 	short v20; // [sp+30h] [bp-Ch]@38
@@ -171,15 +172,14 @@ BYTE* THUnpackerBase::thUncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultB
 	v18 = -128;
 	v22 = 0;
 	v11 = 0;
-	if (resultBuffer == NULL && (resultBuffer = new BYTE[originalSize]) == NULL)
-		return NULL;
+	auto resultBuffer = make_unique<BYTE[]>(originalSize);
 	
 	pBuffer = buffer;
-	pResultBuffer = resultBuffer;
+	pResultBuffer = resultBuffer.get();
 	v7 = 1;
-	while (TRUE)
+	while (true)
 	{
-		while (TRUE)
+		while (true)
 		{
 			if (v18 == 128)
 			{
@@ -290,108 +290,103 @@ BYTE* THUnpackerBase::thUncompress(BYTE* buffer, DWORD bufferSize, BYTE* resultB
 }
 #pragma warning(pop)
 
-// unpack //////////////////////////////////////////////////////////////////////////
 
-THUnpackerBase::THUnpackerBase(FILE* _f)
+// Unpack //////////////////////////////////////////////////////////////////////////
+
+THUnpackerBase::THUnpackerBase(FILE* _f) :
+	f(_f),
+	fileSize(GetFileSize(_f))
 {
-	f = _f;
-	fileSize = getFileSize(_f);
-	count = indexAddress = originalIndexSize = 0;
-	dirName = "th";
 }
 
 
-int THUnpackerBase::unpack()
+int THUnpackerBase::Unpack()
 {
 	int result;
-	readHeader();
-	if ((result = checkCountAndSize()) != 0)
+	ReadHeader();
+	if ((result = CheckCountAndSize()) != 0)
 		return result;
-	readIndex();
+	ReadIndex();
 	puts("Exporting...");
-	if (!exportFiles(f, index, dirName))
+	if (!ExportFiles(f, index, dirName))
 	{
-		puts(E_EXPORT);
-		return EN_EXPORT;
+		puts("Failed to export files!");
+		return 1;
 	}
 
 	puts("Done.");
 	return 0;
 }
 
-int THUnpackerBase::checkCountAndSize()
+int THUnpackerBase::CheckCountAndSize()
 {
 	if (count <= 0)
 	{
-		puts(E_FILE_COUNT);
-		return EN_FILE_COUNT;
+		puts("Invalid file count!");
+		return 1;
 	}
 	if (fileSize <= indexAddress)
 	{
-		puts(E_FILE_SIZE);
-		return EN_FILE_SIZE;
+		puts("Invalid file size!");
+		return 1;
 	}
 	return 0;
 }
 
-
-void THUnpackerBase::formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
+void THUnpackerBase::FormatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
 {
 	index.resize(fileCount);
-	int i;
-	for (i = 0; i < fileCount; i++)
+	for (int i = 0; i < fileCount; i++)
 	{
 		index[i].name = (char*)indexBuffer;
-		indexBuffer += strlen((char*)indexBuffer) + 1;
+		indexBuffer += index[i].name.size() + 1;
 		index[i].address = ((DWORD*)indexBuffer)[0];
 		index[i].originalLength = ((DWORD*)indexBuffer)[1];
 		indexBuffer += 12;
 
-		printf("%30s  %10d  %10d\n", index[i].name.c_str(), index[i].address, index[i].originalLength);
+		printf("%30s  %10d  %10d\n", &index[i].name.front(), index[i].address, index[i].originalLength);
 	}
+	int i;
 	for (i = 0; i < fileCount - 1; i++)
 		index[i].length = index[i + 1].address - index[i].address;
 	index[i].length = indexAddress - index[i].address;
 }
 
-BOOL THUnpackerBase::exportFiles(FILE* f, const vector<Index>& index, string dirName)
+bool THUnpackerBase::ExportFiles(FILE* f, const vector<Index>& index, wstring dirName)
 {
-	_mkdir(dirName.c_str());
-	for (const Index& i : index)
+	_wmkdir(dirName.c_str());
+	for (const auto& i : index)
 	{
-		// read file
+		// Read file
 		DWORD size = i.length;
-		BYTE* fileBuffer = new BYTE[size];
+		auto fileBuffer = make_unique<BYTE[]>(size);
 		fseek(f, i.address, SEEK_SET);
-		fread(fileBuffer, 1, size, f);
+		fread(fileBuffer.get(), 1, size, f);
 
-		// decrypt 1
-		bool uncomp = onUncompress(i, fileBuffer, size);
+		// First decrypt
+		bool uncompress = OnUncompress(i, fileBuffer, size);
 
-		// uncompress
-		if (uncomp)
+		// Uncompress
+		if (uncompress)
 		{
-			BYTE* result = thUncompress(fileBuffer, size, NULL, i.originalLength);
-			delete fileBuffer;
-			fileBuffer = result;
+			fileBuffer = THUncompress(fileBuffer.get(), size, i.originalLength);
 			size = i.originalLength;
 		}
 
-		// decrypt 2
-		onExport(i, fileBuffer, size);
+		// Second decrypt
+		OnExport(i, fileBuffer, size);
 
-		// write file
+		// Write file
+		wstring outputFilePath = dirName + L"\\" + StringToWstring(i.name);
 		FILE* f2;
-		fopen_s(&f2, (dirName + "\\" + i.name).c_str(), "wb");
+		_wfopen_s(&f2, outputFilePath.c_str(), L"wb");
 		if (f2 == NULL)
 		{
-			delete fileBuffer;
-			printf("Failed to open file: %s\n", (dirName + "\\" + i.name).c_str());
-			return FALSE;
+			wcout << L"Failed to open file: " << outputFilePath << endl;
+			return false;
 		}
-		fwrite(fileBuffer, 1, size, f2);
+		fwrite(fileBuffer.get(), 1, size, f2);
 		fclose(f2);
-		delete fileBuffer;
 	}
-	return TRUE;
+	return true;
 }

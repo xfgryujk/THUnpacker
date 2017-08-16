@@ -1,14 +1,15 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "TH07Unpacker.h"
+using namespace std;
 
 
-TH07Unpacker::TH07Unpacker(FILE* _f) 
-: THUnpackerBase(_f)
+TH07Unpacker::TH07Unpacker(FILE* _f) :
+	THUnpackerBase(_f)
 {
-	dirName = "th07";
+	dirName = L"th07";
 }
 
-void TH07Unpacker::readHeader()
+void TH07Unpacker::ReadHeader()
 {
 	DWORD header[3];
 	fread(header, 1, 12, f);
@@ -17,19 +18,16 @@ void TH07Unpacker::readHeader()
 	originalIndexSize = header[2];
 }
 
-void TH07Unpacker::readIndex()
+void TH07Unpacker::ReadIndex()
 {
 	fseek(f, indexAddress, SEEK_SET);
 	DWORD indexSize = fileSize - indexAddress;
-	BYTE* indexBuffer = new BYTE[indexSize];
-	fread(indexBuffer, 1, indexSize, f);
-	// uncompress
-	BYTE* result = thUncompress(indexBuffer, indexSize, NULL, originalIndexSize);
-	delete indexBuffer;
-	indexBuffer = result;
+	auto indexBuffer = make_unique<BYTE[]>(indexSize);
+	fread(indexBuffer.get(), 1, indexSize, f);
+	// Uncompress
+	indexBuffer = THUncompress(indexBuffer.get(), indexSize, originalIndexSize);
 	indexSize = originalIndexSize;
 
-	// format index
-	formatIndex(index, indexBuffer, count, indexAddress);
-	delete indexBuffer;
+	// Format index
+	FormatIndex(index, indexBuffer.get(), count, indexAddress);
 }

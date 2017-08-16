@@ -1,13 +1,13 @@
-#pragma once
+﻿#pragma once
 #include "THUnpackerBase.h"
 
 
-class TH07Unpacker : public THUnpackerBase
+class TH07Unpacker final : public THUnpackerBase
 {
 public:
 	TH07Unpacker(FILE* _f);
 
 protected:
-	void readHeader();
-	void readIndex();
+	virtual void ReadHeader() override;
+	virtual void ReadIndex() override;
 };

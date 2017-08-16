@@ -1,54 +1,53 @@
 ﻿#include "stdafx.h"
 #include "TH10To15Unpacker.h"
+using namespace std;
 
 
 // TH10To15Unpacker //////////////////////////////////////////////////////////////
 
-TH10To15Unpacker::TH10To15Unpacker(FILE* _f, char* _dirName, DWORD _magicNumber, const BYTE* _decParam)
-: THUnpackerBase(_f), magicNumber(_magicNumber), decParam(_decParam)
+TH10To15Unpacker::TH10To15Unpacker(FILE* _f, wchar_t* _dirName, DWORD _magicNumber, const BYTE* _decParam) :
+	THUnpackerBase(_f),
+	magicNumber(_magicNumber),
+	decParam(_decParam)
 {
 	dirName = _dirName;
 }
 
-void TH10To15Unpacker::readHeader()
+void TH10To15Unpacker::ReadHeader()
 {
 	DWORD header[4];
 	header[0] = magicNumber;
 	fread(&header[1], 1, 12, f);
-	// decrypt
-	thDecrypt((BYTE*)header, 16, 27, 55, 16, 16);
+	// Decrypt
+	THDecrypt((BYTE*)header, 16, 27, 55, 16, 16);
 	count = header[3] - 135792468;
 	indexAddress = fileSize - (header[2] - 987654321);
 	originalIndexSize = header[1] - 123456789;
 }
 
-void TH10To15Unpacker::readIndex()
+void TH10To15Unpacker::ReadIndex()
 {
 	fseek(f, indexAddress, SEEK_SET);
 	DWORD indexSize = fileSize - indexAddress;
-	BYTE* indexBuffer = new BYTE[indexSize];
-	fread(indexBuffer, 1, indexSize, f);
-	// decrypt
-	thDecrypt(indexBuffer, indexSize, 62, -101, 128, indexSize);
-	// uncompress
-	BYTE* result = thUncompress(indexBuffer, indexSize, NULL, originalIndexSize);
-	delete indexBuffer;
-	indexBuffer = result;
+	auto indexBuffer = make_unique<BYTE[]>(indexSize);
+	fread(indexBuffer.get(), 1, indexSize, f);
+	// Decrypt
+	THDecrypt(indexBuffer.get(), indexSize, 62, -101, 128, indexSize);
+	// Uncompress
+	indexBuffer = THUncompress(indexBuffer.get(), indexSize, originalIndexSize);
 	indexSize = originalIndexSize;
 
-	// format index
-	formatIndex(index, indexBuffer, count, indexAddress);
-	delete indexBuffer;
+	// Format index
+	FormatIndex(index, indexBuffer.get(), count, indexAddress);
 }
 
-void TH10To15Unpacker::formatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
+void TH10To15Unpacker::FormatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
 {
 	index.resize(fileCount);
-	int i;
-	for (i = 0; i < fileCount; i++)
+	for (int i = 0; i < fileCount; i++)
 	{
 		index[i].name = (char*)indexBuffer;
-		DWORD offset = strlen((char*)indexBuffer) + 1;
+		DWORD offset = index[i].name.size() + 1;
 		if (offset % 4 != 0)
 			offset += 4 - offset % 4;
 		indexBuffer += offset;
@@ -56,35 +55,37 @@ void TH10To15Unpacker::formatIndex(vector<Index>& index, const BYTE* indexBuffer
 		index[i].originalLength = ((DWORD*)indexBuffer)[1];
 		indexBuffer += 12;
 
-		printf("%30s  %10d  %10d\n", index[i].name.c_str(), index[i].address, index[i].originalLength);
+		printf("%30s  %10d  %10d\n", &index[i].name.front(), index[i].address, index[i].originalLength);
 	}
+	int i;
 	for (i = 0; i < fileCount - 1; i++)
 		index[i].length = index[i + 1].address - index[i].address;
 	index[i].length = indexAddress - index[i].address;
 }
 
-bool TH10To15Unpacker::onUncompress(const Index& index, BYTE*& buffer, DWORD& size)
+bool TH10To15Unpacker::OnUncompress(const Index& index, unique_ptr<BYTE[]>& buffer, DWORD& size)
 {
 	BYTE asciiSum = 0;
 	for (const char c : index.name)
 		asciiSum += (BYTE)c;
 	BYTE paramIndex = (asciiSum & 0x07) * 3;
 
-	thDecrypt(
-		buffer,
+	THDecrypt(
+		buffer.get(),
 		size,
 		(decParam + 0x0)[4 * paramIndex],
 		(decParam + 0x1)[4 * paramIndex],
 		*(int*)&(decParam + 0x4)[4 * paramIndex],
-		*(int*)&(decParam + 0x8)[4 * paramIndex]);
+		*(int*)&(decParam + 0x8)[4 * paramIndex]
+	);
 
 	return size != index.originalLength;
 }
 
 
-// child unpackers //////////////////////////////////////////////////////////////
+// Child unpackers //////////////////////////////////////////////////////////////
 
-// see th10.exe.00474BD8
+// See th10.exe.00474BD8
 const BYTE TH10Unpacker::_decParam[] = {
 	0x1B, 0x37, 0xAA, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x51, 0xE9, 0xBB, 0x00,
 	0x40, 0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0xC1, 0x51, 0xCC, 0x00, 0x80, 0x00, 0x00, 0x00,
@@ -94,10 +95,12 @@ const BYTE TH10Unpacker::_decParam[] = {
 	0x00, 0x28, 0x00, 0x00, 0x99, 0x37, 0x77, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00
 };
 
-TH10Unpacker::TH10Unpacker(FILE* _f)
-: TH10To15Unpacker(_f, "th10", 0xB0B35513, _decParam) { }
+TH10Unpacker::TH10Unpacker(FILE* _f) : 
+	TH10To15Unpacker(_f, L"th10", 0xB0B35513, _decParam)
+{
+}
 
-// see th11.exe.004A3480
+// See th11.exe.004A3480
 const BYTE TH11Unpacker::_decParam[] = {
 	0x1B, 0x37, 0xAA, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x51, 0xE9, 0xBB, 0x00,
 	0x40, 0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0xC1, 0x51, 0xCC, 0x00, 0x80, 0x00, 0x00, 0x00,
@@ -107,10 +110,12 @@ const BYTE TH11Unpacker::_decParam[] = {
 	0x00, 0x28, 0x00, 0x00, 0x99, 0x37, 0x77, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00
 };
 
-TH11Unpacker::TH11Unpacker(FILE* _f)
-: TH10To15Unpacker(_f, "th11", 0xB2B35A13, _decParam) { }
+TH11Unpacker::TH11Unpacker(FILE* _f) :
+	TH10To15Unpacker(_f, L"th11", 0xB2B35A13, _decParam)
+{
+}
 
-// see th12.exe.004AE530
+// See th12.exe.004AE530
 const BYTE TH12Unpacker::_decParam[] = {
 	0x1B, 0x73, 0xAA, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x51, 0x9E, 0xBB, 0x00,
 	0x40, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0xC1, 0x15, 0xCC, 0x00, 0x00, 0x04, 0x00, 0x00,
@@ -120,10 +125,12 @@ const BYTE TH12Unpacker::_decParam[] = {
 	0x00, 0x3C, 0x00, 0x00, 0x99, 0x7D, 0x77, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00
 };
 
-TH12Unpacker::TH12Unpacker(FILE* _f)
-: TH10To15Unpacker(_f, "th12", 0xB1B35A13, _decParam) { }
+TH12Unpacker::TH12Unpacker(FILE* _f) :
+	TH10To15Unpacker(_f, L"th12", 0xB1B35A13, _decParam)
+{
+}
 
-// see th13.exe.004BACC8
+// See th13.exe.004BACC8
 const BYTE TH13Unpacker::_decParam[] = {
 	0x1B, 0x73, 0xAA, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x12, 0x43, 0xFF, 0x00,
 	0x00, 0x02, 0x00, 0x00, 0x00, 0x3E, 0x00, 0x00, 0x35, 0x79, 0x11, 0x00, 0x00, 0x04, 0x00, 0x00,
@@ -133,10 +140,12 @@ const BYTE TH13Unpacker::_decParam[] = {
 	0x00, 0x2C, 0x00, 0x00, 0x99, 0x7D, 0x77, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x44, 0x00, 0x00
 };
 
-TH13Unpacker::TH13Unpacker(FILE* _f)
-: TH10To15Unpacker(_f, "th13", 0xB3B35A13, _decParam) { }
+TH13Unpacker::TH13Unpacker(FILE* _f) :
+	TH10To15Unpacker(_f, L"th13", 0xB3B35A13, _decParam)
+{
+}
 
-// see th14.exe.004D1DA0
+// See th14.exe.004D1DA0
 const BYTE TH14Unpacker::_decParam[] = {
 	0x1B, 0x73, 0xAA, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x12, 0x43, 0xFF, 0x00,
 	0x00, 0x02, 0x00, 0x00, 0x00, 0x3E, 0x00, 0x00, 0x35, 0x79, 0x11, 0x00, 0x00, 0x04, 0x00, 0x00,
@@ -146,10 +155,12 @@ const BYTE TH14Unpacker::_decParam[] = {
 	0x00, 0x2C, 0x00, 0x00, 0x99, 0x7D, 0x77, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x44, 0x00, 0x00
 };
 
-TH14Unpacker::TH14Unpacker(FILE* _f)
-: TH10To15Unpacker(_f, "th14", 0xB4B35A13, _decParam) { }
+TH14Unpacker::TH14Unpacker(FILE* _f) :
+	TH10To15Unpacker(_f, L"th14", 0xB4B35A13, _decParam)
+{
+}
 
-// see th15.exe.004E0EF8
+// See th15.exe.004E0EF8
 const BYTE TH15Unpacker::_decParam[] = {
 	0x1B, 0x73, 0xAA, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x12, 0x43, 0xFF, 0x00,
 	0x00, 0x02, 0x00, 0x00, 0x00, 0x3E, 0x00, 0x00, 0x35, 0x79, 0x11, 0x00, 0x00, 0x04, 0x00, 0x00,
@@ -159,5 +170,7 @@ const BYTE TH15Unpacker::_decParam[] = {
 	0x00, 0x2C, 0x00, 0x00, 0x99, 0x7D, 0x77, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x44, 0x00, 0x00
 };
 
-TH15Unpacker::TH15Unpacker(FILE* _f)
-: TH10To15Unpacker(_f, "th15", 0xB3B35A13, _decParam) { }
+TH15Unpacker::TH15Unpacker(FILE* _f) :
+	TH10To15Unpacker(_f, L"th15", 0xB3B35A13, _decParam)
+{
+}

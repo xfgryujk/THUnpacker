@@ -1,33 +1,32 @@
-#pragma once
+﻿#pragma once
 #include "THUnpackerBase.h"
 
 
-class TH06Unpacker : public THUnpackerBase
+class PBG3File final
 {
 protected:
-	class PBG3File
-	{
-	protected:
-		FILE* f;
-		BYTE buffer;
-		BYTE mask;
+	FILE* f = NULL;
+	BYTE buffer = 0;
+	BYTE mask = 0;
 
-	public:
-		PBG3File(FILE* _f);
+public:
+	PBG3File(FILE* _f);
 
-		void setPointer(DWORD address);
-		BOOL read1Bit();
-		DWORD readBits(DWORD bitsToRead);
-		DWORD readNumber();
-		void readString(char* strBuffer, DWORD size);
-	};
+	void SetPointer(DWORD address);
+	BOOL Read1Bit();
+	DWORD ReadBits(DWORD bitsToRead);
+	DWORD ReadNumber();
+	void ReadString(char* strBuffer, DWORD size);
+};
 
+class TH06Unpacker final : public THUnpackerBase
+{
 public:
 	TH06Unpacker(FILE* _f);
 
 protected:
 	PBG3File f;
 
-	void readHeader();
-	void readIndex();
+	virtual void ReadHeader() override;
+	virtual void ReadIndex() override;
 };
