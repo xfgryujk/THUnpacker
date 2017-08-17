@@ -5,15 +5,15 @@
 class PBG3File final
 {
 protected:
-	FILE* f = NULL;
+	std::ifstream& f;
 	BYTE buffer = 0;
 	BYTE mask = 0;
 
 public:
-	PBG3File(FILE* _f);
+	PBG3File(std::ifstream& _f);
 
 	void SetPointer(DWORD address);
-	BOOL Read1Bit();
+	bool Read1Bit();
 	DWORD ReadBits(DWORD bitsToRead);
 	DWORD ReadNumber();
 	void ReadString(char* strBuffer, DWORD size);
@@ -22,7 +22,7 @@ public:
 class TH06Unpacker final : public THUnpackerBase
 {
 public:
-	TH06Unpacker(FILE* _f);
+	TH06Unpacker(std::ifstream& _f);
 
 protected:
 	PBG3File f;

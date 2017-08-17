@@ -3,7 +3,7 @@
 using namespace std;
 
 
-TH0809Unpacker::TH0809Unpacker(FILE* _f) :
+TH0809Unpacker::TH0809Unpacker(ifstream& _f) :
 	THUnpackerBase(_f)
 {
 	dirName = L"th0809";
@@ -12,7 +12,7 @@ TH0809Unpacker::TH0809Unpacker(FILE* _f) :
 void TH0809Unpacker::ReadHeader()
 {
 	DWORD header[3];
-	fread(header, 1, 12, f);
+	f.read((char*)header, 12);
 	// Decrypt
 	THDecrypt((BYTE*)header, 12, 27, 55, 12, 1024);
 	count = header[0] - 123456;
@@ -22,10 +22,10 @@ void TH0809Unpacker::ReadHeader()
 
 void TH0809Unpacker::ReadIndex()
 {
-	fseek(f, indexAddress, SEEK_SET);
+	f.seekg(indexAddress);
 	DWORD indexSize = fileSize - indexAddress;
 	auto indexBuffer = make_unique<BYTE[]>(indexSize);
-	fread(indexBuffer.get(), 1, indexSize, f);
+	f.read((char*)indexBuffer.get(), indexSize);
 	// Decrypt
 	THDecrypt(indexBuffer.get(), indexSize, 62, -101, 128, 1024);
 	// Uncompress

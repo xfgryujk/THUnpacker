@@ -12,16 +12,15 @@ int wmain(int argc, WCHAR* argv[])
 
 	if (argc != 2)
 	{
-		puts("Usage: THUnpacker filename");
+		cout << "Usage: THUnpacker filename" << endl;
 		return 1;
 	}
 
 	// Open file
-	FILE* f;
-	_tfopen_s(&f, argv[1], _T("rb"));
-	if (f == NULL)
+	ifstream f(argv[1], ios_base::binary);
+	if (!f.is_open())
 	{
-		puts("Failed to open the file!");
+		cout << "Failed to open the file!" << endl;
 		return 1;
 	}
 
@@ -29,16 +28,11 @@ int wmain(int argc, WCHAR* argv[])
 	auto unpacker = THUnpackerBase::Create(f);
 
 	// Unpack
-	int result;
 	if (unpacker == nullptr)
 	{
-		puts("Unknown file type!");
-		result = 1;
+		cout << "Unknown file type!" << endl;
+		return 1;
 	}
-	else
-		result = unpacker->Unpack();
-
-	// Close file
-	fclose(f);
-	return result;
+	
+	return unpacker->Unpack() ? 0 : 1;
 }

@@ -9,7 +9,7 @@ protected:
 	const BYTE* decParam;
 
 public:
-	TH10To15Unpacker(FILE* _f, wchar_t* _dirName, DWORD _magicNumber, const BYTE* _decParam);
+	TH10To15Unpacker(std::ifstream& _f, wchar_t* _dirName, DWORD _magicNumber, const BYTE* _decParam);
 	virtual ~TH10To15Unpacker() = default;
 
 protected:
@@ -25,7 +25,7 @@ class TH10Unpacker final : public TH10To15Unpacker
 private:
 	static const BYTE _decParam[];
 public:
-	TH10Unpacker(FILE* _f);
+	TH10Unpacker(std::ifstream& _f);
 };
 
 class TH11Unpacker final : public TH10To15Unpacker
@@ -33,7 +33,7 @@ class TH11Unpacker final : public TH10To15Unpacker
 private:
 	static const BYTE _decParam[];
 public:
-	TH11Unpacker(FILE* _f);
+	TH11Unpacker(std::ifstream& _f);
 };
 
 class TH12Unpacker final : public TH10To15Unpacker
@@ -41,7 +41,7 @@ class TH12Unpacker final : public TH10To15Unpacker
 private:
 	static const BYTE _decParam[];
 public:
-	TH12Unpacker(FILE* _f);
+	TH12Unpacker(std::ifstream& _f);
 };
 
 class TH13Unpacker final : public TH10To15Unpacker
@@ -49,7 +49,7 @@ class TH13Unpacker final : public TH10To15Unpacker
 private:
 	static const BYTE _decParam[];
 public:
-	TH13Unpacker(FILE* _f);
+	TH13Unpacker(std::ifstream& _f);
 };
 
 class TH14Unpacker final : public TH10To15Unpacker
@@ -57,7 +57,7 @@ class TH14Unpacker final : public TH10To15Unpacker
 private:
 	static const BYTE _decParam[];
 public:
-	TH14Unpacker(FILE* _f);
+	TH14Unpacker(std::ifstream& _f);
 };
 
 class TH15Unpacker final : public TH10To15Unpacker
@@ -65,5 +65,5 @@ class TH15Unpacker final : public TH10To15Unpacker
 private:
 	static const BYTE _decParam[];
 public:
-	TH15Unpacker(FILE* _f);
+	TH15Unpacker(std::ifstream& _f);
 };

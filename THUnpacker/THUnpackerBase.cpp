@@ -10,10 +10,10 @@ using namespace std;
 
 
 // Create instance base on magic number
-std::shared_ptr<THUnpackerBase> THUnpackerBase::Create(FILE* _f)
+std::shared_ptr<THUnpackerBase> THUnpackerBase::Create(ifstream& _f)
 {
 	DWORD magicNumber = 0;
-	fread(&magicNumber, 4, 1, _f);
+	_f.read((char*)&magicNumber, 4);
 
 	switch (magicNumber)
 	{
@@ -31,7 +31,7 @@ std::shared_ptr<THUnpackerBase> THUnpackerBase::Create(FILE* _f)
 		return make_shared<TH12Unpacker>(_f);
 	case 0xB3B35A13: // Encrypted "THA1" for TH13/15
 	{
-		puts("Please input [3|5] if this file belongs to TH13/15");
+		cout << "Please input [3|5] if this file belongs to TH13/15" << endl;
 		char c;
 		while ((c = getchar()) != '3' && c != '5');
 		if (c == '3')
@@ -47,12 +47,12 @@ std::shared_ptr<THUnpackerBase> THUnpackerBase::Create(FILE* _f)
 
 // Common static functions //////////////////////////////////////////////////////////
 
-DWORD THUnpackerBase::GetFileSize(FILE* f)
+DWORD THUnpackerBase::GetFileSize(ifstream& f)
 {
-	long offset = ftell(f);
-	fseek(f, 0, SEEK_END);
-	DWORD size = ftell(f);
-	fseek(f, offset, SEEK_SET);
+	auto offset = f.tellg();
+	f.seekg(0, ios_base::end);
+	DWORD size = (DWORD)f.tellg();
+	f.seekg(offset);
 	return size;
 }
 
@@ -293,44 +293,43 @@ unique_ptr<BYTE[]> THUnpackerBase::THUncompress(const BYTE* buffer, DWORD buffer
 
 // Unpack //////////////////////////////////////////////////////////////////////////
 
-THUnpackerBase::THUnpackerBase(FILE* _f) :
+THUnpackerBase::THUnpackerBase(ifstream& _f) :
 	f(_f),
 	fileSize(GetFileSize(_f))
 {
 }
 
 
-int THUnpackerBase::Unpack()
+bool THUnpackerBase::Unpack()
 {
-	int result;
 	ReadHeader();
-	if ((result = CheckCountAndSize()) != 0)
-		return result;
+	if (!CheckCountAndSize())
+		return false;
 	ReadIndex();
-	puts("Exporting...");
+	cout << "Exporting..." << endl;
 	if (!ExportFiles(f, index, dirName))
 	{
-		puts("Failed to export files!");
-		return 1;
+		cout << "Failed to export files!" << endl;
+		return false;
 	}
 
-	puts("Done.");
-	return 0;
+	cout << "Done." << endl;
+	return true;
 }
 
-int THUnpackerBase::CheckCountAndSize()
+bool THUnpackerBase::CheckCountAndSize()
 {
 	if (count <= 0)
 	{
-		puts("Invalid file count!");
-		return 1;
+		cout << "Invalid file count!" << endl;
+		return false;
 	}
 	if (fileSize <= indexAddress)
 	{
-		puts("Invalid file size!");
-		return 1;
+		cout << "Invalid file size!" << endl;
+		return false;
 	}
-	return 0;
+	return true;
 }
 
 void THUnpackerBase::FormatIndex(vector<Index>& index, const BYTE* indexBuffer, int fileCount, DWORD indexAddress)
@@ -344,7 +343,7 @@ void THUnpackerBase::FormatIndex(vector<Index>& index, const BYTE* indexBuffer, 
 		index[i].originalLength = ((DWORD*)indexBuffer)[1];
 		indexBuffer += 12;
 
-		printf("%30s  %10d  %10d\n", &index[i].name.front(), index[i].address, index[i].originalLength);
+		printf("%30s  %10d  %10d\n", index[i].name.c_str(), index[i].address, index[i].originalLength);
 	}
 	int i;
 	for (i = 0; i < fileCount - 1; i++)
@@ -352,7 +351,7 @@ void THUnpackerBase::FormatIndex(vector<Index>& index, const BYTE* indexBuffer, 
 	index[i].length = indexAddress - index[i].address;
 }
 
-bool THUnpackerBase::ExportFiles(FILE* f, const vector<Index>& index, wstring dirName)
+bool THUnpackerBase::ExportFiles(ifstream& f, const vector<Index>& index, wstring dirName)
 {
 	_wmkdir(dirName.c_str());
 	for (const auto& i : index)
@@ -360,8 +359,8 @@ bool THUnpackerBase::ExportFiles(FILE* f, const vector<Index>& index, wstring di
 		// Read file
 		DWORD size = i.length;
 		auto fileBuffer = make_unique<BYTE[]>(size);
-		fseek(f, i.address, SEEK_SET);
-		fread(fileBuffer.get(), 1, size, f);
+		f.seekg(i.address);
+		f.read((char*)fileBuffer.get(), size);
 
 		// First decrypt
 		bool uncompress = OnUncompress(i, fileBuffer, size);
@@ -378,15 +377,13 @@ bool THUnpackerBase::ExportFiles(FILE* f, const vector<Index>& index, wstring di
 
 		// Write file
 		wstring outputFilePath = dirName + L"\\" + StringToWstring(i.name);
-		FILE* f2;
-		_wfopen_s(&f2, outputFilePath.c_str(), L"wb");
-		if (f2 == NULL)
+		ofstream f2(outputFilePath, ios_base::binary);
+		if (!f2.is_open())
 		{
 			wcout << L"Failed to open file: " << outputFilePath << endl;
 			return false;
 		}
-		fwrite(fileBuffer.get(), 1, size, f2);
-		fclose(f2);
+		f2.write((char*)fileBuffer.get(), size);
 	}
 	return true;
 }

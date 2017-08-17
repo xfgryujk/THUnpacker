@@ -1,28 +1,29 @@
 ﻿#include "stdafx.h"
 #include "TH06Unpacker.h"
+using namespace std;
 
 
 // PBG3File ///////////////////////////////////////////////////////////////////////////////
 
-PBG3File::PBG3File(FILE* _f) :
+PBG3File::PBG3File(ifstream& _f) :
 	f(_f)
 {
 }
 
 void PBG3File::SetPointer(DWORD address)
 {
-	fseek(f, address, SEEK_SET);
+	f.seekg(address);
 	mask = 0;
 }
 
-BOOL PBG3File::Read1Bit()
+bool PBG3File::Read1Bit()
 {
 	if (mask == 0)
 	{
-		fread(&buffer, 1, 1, f);
+		f.read((char*)&buffer, 1);
 		mask = 1 << 7;
 	}
-	BOOL result = (buffer & mask) != 0;
+	bool result = (buffer & mask) != 0;
 	mask >>= 1;
 	return result;
 }
@@ -31,8 +32,10 @@ DWORD PBG3File::ReadBits(DWORD bitsToRead)
 {
 	DWORD result = 0;
 	for (DWORD resultMask = 1 << (bitsToRead - 1); resultMask != 0; resultMask >>= 1)
-	if (Read1Bit())
-		result |= resultMask;
+	{
+		if (Read1Bit())
+			result |= resultMask;
+	}
 	return result;
 }
 
@@ -57,7 +60,7 @@ void PBG3File::ReadString(char* strBuffer, DWORD size)
 
 // TH06Unpacker ///////////////////////////////////////////////////////////////////////////
 
-TH06Unpacker::TH06Unpacker(FILE* _f) : 
+TH06Unpacker::TH06Unpacker(ifstream& _f) : 
 	THUnpackerBase(_f),
 	f(_f)
 {
@@ -87,7 +90,7 @@ void TH06Unpacker::ReadIndex()
 		f.ReadString(&i.name.front(), 256);
 		i.name.resize(strlen(i.name.c_str()));
 
-		printf("%30s  %10d  %10d\n", &i.name.front(), i.address, i.originalLength);
+		printf("%30s  %10d  %10d\n", i.name.c_str(), i.address, i.originalLength);
 	}
 	int i;
 	for (i = 0; i < count - 1; i++)

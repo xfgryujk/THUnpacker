@@ -5,7 +5,7 @@
 class TH0809Unpacker : public THUnpackerBase
 {
 public:
-	TH0809Unpacker(FILE* _f);
+	TH0809Unpacker(std::ifstream& _f);
 
 protected:
 	virtual void ReadHeader() override;
