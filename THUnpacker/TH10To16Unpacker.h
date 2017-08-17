@@ -2,15 +2,15 @@
 #include "THUnpackerBase.h"
 
 
-class TH10To15Unpacker : public THUnpackerBase
+class TH10To16Unpacker : public THUnpackerBase
 {
 protected:
 	const DWORD magicNumber;
 	const BYTE* decParam;
 
 public:
-	TH10To15Unpacker(std::ifstream& _f, wchar_t* _dirName, DWORD _magicNumber, const BYTE* _decParam);
-	virtual ~TH10To15Unpacker() = default;
+	TH10To16Unpacker(std::ifstream& _f, wchar_t* _dirName, DWORD _magicNumber, const BYTE* _decParam);
+	virtual ~TH10To16Unpacker() = default;
 
 protected:
 	virtual void ReadHeader() override;
@@ -20,7 +20,7 @@ protected:
 };
 
 
-class TH10Unpacker final : public TH10To15Unpacker
+class TH10Unpacker final : public TH10To16Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -28,7 +28,7 @@ public:
 	TH10Unpacker(std::ifstream& _f);
 };
 
-class TH11Unpacker final : public TH10To15Unpacker
+class TH11Unpacker final : public TH10To16Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -36,7 +36,7 @@ public:
 	TH11Unpacker(std::ifstream& _f);
 };
 
-class TH12Unpacker final : public TH10To15Unpacker
+class TH12Unpacker final : public TH10To16Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -44,7 +44,7 @@ public:
 	TH12Unpacker(std::ifstream& _f);
 };
 
-class TH13Unpacker final : public TH10To15Unpacker
+class TH13Unpacker final : public TH10To16Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -52,7 +52,7 @@ public:
 	TH13Unpacker(std::ifstream& _f);
 };
 
-class TH14Unpacker final : public TH10To15Unpacker
+class TH14Unpacker final : public TH10To16Unpacker
 {
 private:
 	static const BYTE _decParam[];
@@ -60,10 +60,10 @@ public:
 	TH14Unpacker(std::ifstream& _f);
 };
 
-class TH15Unpacker final : public TH10To15Unpacker
+class TH1516Unpacker final : public TH10To16Unpacker
 {
 private:
 	static const BYTE _decParam[];
 public:
-	TH15Unpacker(std::ifstream& _f);
+	TH1516Unpacker(std::ifstream& _f);
 };

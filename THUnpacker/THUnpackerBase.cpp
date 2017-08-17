@@ -6,7 +6,7 @@ using namespace std;
 #include "TH06Unpacker.h"
 #include "TH07Unpacker.h"
 #include "TH0809Unpacker.h"
-#include "TH10To15Unpacker.h"
+#include "TH10To16Unpacker.h"
 
 
 // Create instance base on magic number
@@ -31,12 +31,18 @@ std::shared_ptr<THUnpackerBase> THUnpackerBase::Create(ifstream& _f)
 		return make_shared<TH12Unpacker>(_f);
 	case 0xB3B35A13: // Encrypted "THA1" for TH13/15
 	{
-		cout << "Please input [3|5] if this file belongs to TH13/15" << endl;
-		char c;
-		while ((c = getchar()) != '3' && c != '5');
-		if (c == '3')
-			return make_shared<TH13Unpacker>(_f);
-		return make_shared<TH15Unpacker>(_f);
+		cout << "Please input [3|5|6] if this file belongs to TH13/15/16" << endl;
+		while (true)
+		{
+			switch (getchar())
+			{
+			case '3':
+				return make_shared<TH13Unpacker>(_f);
+			case '5':
+			case '6':
+				return make_shared<TH1516Unpacker>(_f);
+			}
+		}
 	}
 	case 0xB4B35A13: // Encrypted "THA1" for TH14
 		return make_shared<TH14Unpacker>(_f);

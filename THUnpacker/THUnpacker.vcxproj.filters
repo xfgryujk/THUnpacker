@@ -33,7 +33,7 @@
     <ClInclude Include="TH0809Unpacker.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="TH10To15Unpacker.h">
+    <ClInclude Include="TH10To16Unpacker.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
